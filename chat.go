@@ -15,3 +15,7 @@ type Message struct {
 	Timestamp time.Time
 	Text      string
 }
+
+func (c Chat) String() string {
+	return c.Title
+}

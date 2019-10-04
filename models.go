@@ -86,8 +86,13 @@ type UserID struct {
 }
 
 type Segment struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
+	Type     string   `json:"type"`
+	Text     string   `json:"text"`
+	LinkData LinkData `json:"link_data"`
+}
+
+type LinkData struct {
+	LinkTarget string `json:"link_target"`
 }
 type MessageContent struct {
 	Segment []Segment `json:"segment"`

@@ -9,6 +9,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/kennygrant/sanitize"
+
+	"github.com/AlecAivazis/survey/v2"
 )
 
 func main() {
@@ -32,7 +36,8 @@ func main() {
 	json.Unmarshal(byteValue, &hangouts)
 
 	fmt.Println("Loaded ", len(hangouts.Conversations), " conversations")
-
+	chatMap := map[string]Chat{}
+	chatTitles := []string{}
 	chats := []Chat{}
 	for _, c := range hangouts.Conversations {
 		chat := Chat{
@@ -51,19 +56,59 @@ func main() {
 		for _, e := range c.Events {
 			message := Message{}
 			t, _ := strconv.ParseInt(e.Timestamp, 10, 64)
+			t = t * 1000
 			message.Timestamp = time.Unix(0, t)
 			message.SenderID = chat.ParticipantIDs[e.SenderID.ChatID]
 			message.Sender = chat.ParticipantNames[e.SenderID.ChatID]
 			for _, s := range e.ChatMessage.MessageContent.Segment {
-				if s.Type == "TEXT" {
-					message.Text = message.Text + " " + s.Text
+				message.Text = message.Text + " " + s.Text
+				if s.Type == "LINK" {
+					message.Text = message.Text + "[" + s.LinkData.LinkTarget + "]"
 				}
 			}
+			chat.Messages = append(chat.Messages, message)
 		}
 		chats = append(chats, chat)
+		chatTitles = append(chatTitles, chat.Title)
+		chatMap[chat.Title] = chat
 	}
 
-	for _, chat := range chats {
-		fmt.Println(chat.Title)
+	prompt := &survey.Select{
+		Message: "Choose a chat:",
+		Options: chatTitles,
 	}
+
+	for {
+		selectedChatTitle := ""
+		err := survey.AskOne(prompt, &selectedChatTitle)
+		if err != nil {
+			break
+		}
+
+		selectedChat := chatMap[selectedChatTitle]
+
+		filename := sanitize.Name(selectedChatTitle + ".txt")
+		f, err := os.Create(filename)
+		if err != nil {
+			fmt.Println(err)
+			f.Close()
+			return
+		}
+
+		var line string
+		for _, m := range selectedChat.Messages {
+			line = m.Sender + " @ " + m.Timestamp.Format("3:04:05 PM Jan _2 2006") + ": " + m.Text + "\r"
+			//fmt.Println(line)
+			fmt.Fprintln(f, line)
+		}
+
+		fmt.Println(selectedChatTitle, " saved to ", filename)
+
+		err = f.Close()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}
+
 }
