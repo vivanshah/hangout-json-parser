@@ -49,13 +49,13 @@ type CurrentParticipant struct {
 	ChatID string `json:"chat_id"`
 }
 type ParticipantData struct {
-	ID                             ID     `json:"id"`
-	FallbackName                   string `json:"fallback_name"`
-	InvitationStatus               string `json:"invitation_status"`
-	ParticipantType                string `json:"participant_type"`
-	NewInvitationStatus            string `json:"new_invitation_status"`
-	InDifferentCustomerAsRequester bool   `json:"in_different_customer_as_requester"`
-	DomainID                       string `json:"domain_id"`
+	ID                             ParticipantID `json:"id"`
+	FallbackName                   string        `json:"fallback_name"`
+	InvitationStatus               string        `json:"invitation_status"`
+	ParticipantType                string        `json:"participant_type"`
+	NewInvitationStatus            string        `json:"new_invitation_status"`
+	InDifferentCustomerAsRequester bool          `json:"in_different_customer_as_requester"`
+	DomainID                       string        `json:"domain_id"`
 }
 type Conversation struct {
 	ID                     ID                    `json:"id"`
