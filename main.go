@@ -9,7 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
+	"github.com/vivanshah/hangout-json-parser/models"
+	"github.com/vivanshah/hangout-json-parser/chatWriter"
 	"github.com/kennygrant/sanitize"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -17,7 +18,10 @@ import (
 
 func main() {
 
-	var input = flag.String("input", "hangouts.json", "Input json file")
+	var (
+		input = flag.String("input", "hangouts.json", "Input json file")
+		//outputFormat = flag.String("f","txt", "Output file format")
+	)
 	flag.Parse()
 
 	jsonFile, err := os.Open(*input)
@@ -26,7 +30,7 @@ func main() {
 	}
 	defer jsonFile.Close()
 
-	var hangouts Hangouts
+	var hangouts models.Hangouts
 	fmt.Println("Parsing hangouts file")
 	byteValue, err := ioutil.ReadAll(jsonFile)
 	if err != nil {
@@ -36,14 +40,14 @@ func main() {
 	json.Unmarshal(byteValue, &hangouts)
 
 	fmt.Println("Loaded ", len(hangouts.Conversations), " conversations")
-	chatMap := map[string]Chat{}
+	chatMap := map[string]models.Chat{}
 	chatTitles := []string{}
-	chats := []Chat{}
+	chats := []models.Chat{}
 	for _, c := range hangouts.Conversations {
-		chat := Chat{
+		chat := models.Chat{
 			ParticipantIDs:   map[string]int{},
 			ParticipantNames: map[string]string{},
-			Messages:         []Message{},
+			Messages:         []models.Message{},
 		}
 
 		participants := c.Conversation.Conversation.ParticipantData
@@ -54,7 +58,7 @@ func main() {
 		}
 		chat.Title = strings.TrimRight(chat.Title, ", ")
 		for _, e := range c.Events {
-			message := Message{}
+			message := models.Message{}
 			t, _ := strconv.ParseInt(e.Timestamp, 10, 64)
 			t = t * 1000
 			message.Timestamp = time.Unix(0, t)
@@ -88,27 +92,18 @@ func main() {
 		selectedChat := chatMap[selectedChatTitle]
 
 		filename := sanitize.Name(selectedChatTitle + ".txt")
-		f, err := os.Create(filename)
+
+		c, err := chatWriter.NewTxtWriter(filename)
 		if err != nil {
-			fmt.Println(err)
-			f.Close()
-			return
+			fmt.Println(err.Error)
+			break
 		}
-
-		var line string
-		for _, m := range selectedChat.Messages {
-			line = m.Sender + " @ " + m.Timestamp.Format("3:04:05 PM Jan _2 2006") + ": " + m.Text + "\r"
-			//fmt.Println(line)
-			fmt.Fprintln(f, line)
+		err = c.WriteChat(selectedChat)
+		if err != nil {
+			fmt.Println(err.Error)
+			break
 		}
-
 		fmt.Println(selectedChatTitle, " saved to ", filename)
-
-		err = f.Close()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
 	}
 
 }
