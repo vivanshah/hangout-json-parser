@@ -38,7 +38,11 @@ func main() {
 		fmt.Println(err)
 	}
 
-	json.Unmarshal(byteValue, &hangouts)
+	err = json.Unmarshal(byteValue, &hangouts)
+	if err != nil {
+		fmt.Println("Error parsing input file: ", err.Error())
+		os.Exit((1))
+	}
 
 	fmt.Println("Loaded ", len(hangouts.Conversations), " conversations")
 	chatMap := map[string]models.Chat{}
