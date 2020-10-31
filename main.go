@@ -80,6 +80,9 @@ func main() {
 			}
 			chat.Messages = append(chat.Messages, message)
 		}
+		if len(chat.Messages) < 1 {
+			continue
+		}
 		chats = append(chats, chat)
 		chatTitles = append(chatTitles, chat.Title)
 		chatMap[chat.Title] = chat
