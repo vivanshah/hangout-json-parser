@@ -1,8 +1,9 @@
-package chatWriter
+package chatwriter
 
 import (
-	"os"
 	"fmt"
+	"os"
+
 	"github.com/vivanshah/hangout-json-parser/models"
 )
 
@@ -10,17 +11,15 @@ type txtWriter struct {
 	Path string
 }
 
-func NewTxtWriter(path string) (ChatWriter, error) {
-	t := txtWriter {
-		Path: path,
+func NewTxtWriter(filename string) (ChatWriter, error) {
+	t := txtWriter{
+		Path: filename + ".txt",
 	}
 
 	return &t, nil
 }
 
-
-
-func (t *txtWriter)  WriteChat(chat models.Chat) error {
+func (t *txtWriter) WriteChat(chat models.Chat) error {
 
 	f, err := os.Create(t.Path)
 	defer f.Close()
@@ -33,8 +32,6 @@ func (t *txtWriter)  WriteChat(chat models.Chat) error {
 		line = m.Sender + " @ " + m.Timestamp.Format("3:04:05 PM Jan _2 2006") + ": " + m.Text + "\r"
 		fmt.Fprintln(f, line)
 	}
-
-	
 
 	err = f.Close()
 	if err != nil {

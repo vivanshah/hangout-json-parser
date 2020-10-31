@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/kennygrant/sanitize"
-	"github.com/vivanshah/hangout-json-parser/chatWriter"
+	"github.com/vivanshah/hangout-json-parser/chatwriter"
 	"github.com/vivanshah/hangout-json-parser/models"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -99,9 +99,9 @@ func main() {
 
 		selectedChat := chatMap[selectedChatTitle]
 
-		filename := sanitize.Name(selectedChatTitle + ".txt")
+		filename := sanitize.Name(selectedChatTitle)
 
-		c, err := chatWriter.NewTxtWriter(filename)
+		c, err := chatwriter.NewTxtWriter(filename)
 		if err != nil {
 			fmt.Println(err.Error())
 			break
