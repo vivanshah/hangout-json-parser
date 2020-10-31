@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/kennygrant/sanitize"
-	"github.com/vivanshah/hangout-json-parser/chatWriter"
+	"github.com/vivanshah/hangout-json-parser/chatwriter"
 	"github.com/vivanshah/hangout-json-parser/models"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -38,7 +38,11 @@ func main() {
 		fmt.Println(err)
 	}
 
-	json.Unmarshal(byteValue, &hangouts)
+	err = json.Unmarshal(byteValue, &hangouts)
+	if err != nil {
+		fmt.Println("Error parsing input file: ", err.Error())
+		os.Exit((1))
+	}
 
 	fmt.Println("Loaded ", len(hangouts.Conversations), " conversations")
 	chatMap := map[string]models.Chat{}
@@ -95,9 +99,9 @@ func main() {
 
 		selectedChat := chatMap[selectedChatTitle]
 
-		filename := sanitize.Name(selectedChatTitle + ".txt")
+		filename := sanitize.Name(selectedChatTitle)
 
-		c, err := chatWriter.NewTxtWriter(filename)
+		c, err := chatwriter.NewTxtWriter(filename)
 		if err != nil {
 			fmt.Println(err.Error())
 			break
