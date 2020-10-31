@@ -9,9 +9,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"github.com/vivanshah/hangout-json-parser/models"
-	"github.com/vivanshah/hangout-json-parser/chatWriter"
+
 	"github.com/kennygrant/sanitize"
+	"github.com/vivanshah/hangout-json-parser/chatWriter"
+	"github.com/vivanshah/hangout-json-parser/models"
 
 	"github.com/AlecAivazis/survey/v2"
 )
@@ -58,6 +59,9 @@ func main() {
 		}
 		chat.Title = strings.TrimRight(chat.Title, ", ")
 		for _, e := range c.Events {
+			if e.EventType != "REGULAR_CHAT_MESSAGE" {
+				continue
+			}
 			message := models.Message{}
 			t, _ := strconv.ParseInt(e.Timestamp, 10, 64)
 			t = t * 1000
@@ -95,12 +99,12 @@ func main() {
 
 		c, err := chatWriter.NewTxtWriter(filename)
 		if err != nil {
-			fmt.Println(err.Error)
+			fmt.Println(err.Error())
 			break
 		}
 		err = c.WriteChat(selectedChat)
 		if err != nil {
-			fmt.Println(err.Error)
+			fmt.Println(err.Error())
 			break
 		}
 		fmt.Println(selectedChatTitle, " saved to ", filename)
