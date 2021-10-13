@@ -1,4 +1,4 @@
-package chatwriter
+package chat
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ type txtWriter struct {
 	Path string
 }
 
-func NewTxtWriter(filename string) (ChatWriter, error) {
+func NewTxtWriter(filename string) (Writer, error) {
 	t := txtWriter{
 		Path: filename + ".txt",
 	}
