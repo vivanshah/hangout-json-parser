@@ -3,6 +3,8 @@ package terminal
 import (
 	"fmt"
 	"unicode"
+
+	"golang.org/x/text/width"
 )
 
 type RuneReader struct {
@@ -29,7 +31,13 @@ func (rr *RuneReader) printChar(char rune, mask rune) {
 	}
 }
 
-func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
+type OnRuneFn func(rune, []rune) ([]rune, bool, error)
+
+func (rr *RuneReader) ReadLine(mask rune, onRunes ...OnRuneFn) ([]rune, error) {
+	return rr.ReadLineWithDefault(mask, []rune{}, onRunes...)
+}
+
+func (rr *RuneReader) ReadLineWithDefault(mask rune, d []rune, onRunes ...OnRuneFn) ([]rune, error) {
 	line := []rune{}
 	// we only care about horizontal displacements from the origin so start counting at 0
 	index := 0
@@ -39,10 +47,45 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 		Out: rr.stdio.Out,
 	}
 
+	onRune := func(r rune, line []rune) ([]rune, bool, error) {
+		return line, false, nil
+	}
+
+	// if the user pressed a key the caller was interested in capturing
+	if len(onRunes) > 0 {
+		onRune = onRunes[0]
+	}
+
 	// we get the terminal width and height (if resized after this point the property might become invalid)
 	terminalSize, _ := cursor.Size(rr.Buffer())
 	// we set the current location of the cursor once
 	cursorCurrent, _ := cursor.Location(rr.Buffer())
+
+	increment := func() {
+		if cursorCurrent.CursorIsAtLineEnd(terminalSize) {
+			cursorCurrent.X = COORDINATE_SYSTEM_BEGIN
+			cursorCurrent.Y++
+		} else {
+			cursorCurrent.X++
+		}
+	}
+	decrement := func() {
+		if cursorCurrent.CursorIsAtLineBegin() {
+			cursorCurrent.X = terminalSize.X
+			cursorCurrent.Y--
+		} else {
+			cursorCurrent.X--
+		}
+	}
+
+	if len(d) > 0 {
+		index = len(d)
+		fmt.Fprint(rr.stdio.Out, string(d))
+		line = d
+		for range d {
+			increment()
+		}
+	}
 
 	for {
 		// wait for some input
@@ -50,8 +93,10 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 		if err != nil {
 			return line, err
 		}
-		// increment cursor location
-		cursorCurrent.X++
+
+		if l, stop, err := onRune(r, line); stop || err != nil {
+			return l, err
+		}
 
 		// if the user pressed enter or some other newline/termination like ctrl+d
 		if r == '\r' || r == '\n' || r == KeyEndTransmission {
@@ -61,13 +106,10 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 					EraseLine(rr.stdio.Out, ERASE_LINE_END)
 					cursor.PreviousLine(1)
 					cursor.Forward(int(terminalSize.X))
-					cursorCurrent.X = terminalSize.X
-					cursorCurrent.Y--
-
 				} else {
 					cursor.Back(1)
-					cursorCurrent.X--
 				}
+				decrement()
 				index--
 			}
 			// move the cursor the a new line
@@ -92,19 +134,23 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 				// if we are at the end of the word
 				if index == len(line) {
 					// just remove the last letter from the internal representation
+					// also count the number of cells the rune before the cursor occupied
+					cells := runeWidth(line[len(line)-1])
 					line = line[:len(line)-1]
 					// go back one
 					if cursorCurrent.X == 1 {
 						cursor.PreviousLine(1)
 						cursor.Forward(int(terminalSize.X))
 					} else {
-						cursor.Back(1)
+						cursor.Back(cells)
 					}
 
 					// clear the rest of the line
 					EraseLine(rr.stdio.Out, ERASE_LINE_END)
 				} else {
 					// we need to remove a character from the middle of the word
+
+					cells := runeWidth(line[index-1])
 
 					// remove the current index from the list
 					line = append(line[:index-1], line[index:]...)
@@ -115,7 +161,7 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 					cursor.Save()
 
 					// clear the rest of the line
-					cursor.Back(1)
+					cursor.Back(cells)
 
 					// print what comes after
 					for _, char := range line[index-1:] {
@@ -136,12 +182,13 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 						cursor.PreviousLine(1)
 						cursor.Forward(int(terminalSize.X))
 					} else {
-						cursor.Back(1)
+						cursor.Back(cells)
 					}
 				}
 
 				// decrement the index
 				index--
+				decrement()
 			} else {
 				// otherwise the user pressed backspace while at the beginning of the line
 				soundBell(rr.stdio.Out)
@@ -160,10 +207,11 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 					cursor.PreviousLine(1)
 					cursor.Forward(int(terminalSize.X))
 				} else {
-					cursor.Back(1)
+					cursor.Back(runeWidth(line[index-1]))
 				}
 				//decrement the index
 				index--
+				decrement()
 
 			} else {
 				// otherwise we are at the beginning of where we started reading lines
@@ -183,9 +231,10 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 				if cursorCurrent.CursorIsAtLineEnd(terminalSize) {
 					cursor.NextLine(1)
 				} else {
-					cursor.Forward(1)
+					cursor.Forward(runeWidth(line[index]))
 				}
 				index++
+				increment()
 
 			} else {
 				// otherwise we are at the end of the word and can't go past
@@ -202,12 +251,11 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 				if cursorCurrent.CursorIsAtLineBegin() {
 					cursor.PreviousLine(1)
 					cursor.Forward(int(terminalSize.X))
-					cursorCurrent.X = terminalSize.X
 					cursorCurrent.Y--
-
+					cursorCurrent.X = terminalSize.X
 				} else {
-					cursor.Back(1)
-					cursorCurrent.X--
+					cursor.Back(runeWidth(line[index-1]))
+					cursorCurrent.X -= Short(runeWidth(line[index-1]))
 				}
 				index--
 			}
@@ -217,12 +265,11 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 			for index != len(line) {
 				if cursorCurrent.CursorIsAtLineEnd(terminalSize) {
 					cursor.NextLine(1)
-					cursorCurrent.X = COORDINATE_SYSTEM_BEGIN
 					cursorCurrent.Y++
-
+					cursorCurrent.X = COORDINATE_SYSTEM_BEGIN
 				} else {
-					cursor.Forward(1)
-					cursorCurrent.X++
+					cursor.Forward(runeWidth(line[index]))
+					cursorCurrent.X += Short(runeWidth(line[index]))
 				}
 				index++
 			}
@@ -271,6 +318,7 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 			line = append(line, r)
 			// save the location of the cursor
 			index++
+			increment()
 			// print out the character
 			rr.printChar(r, mask)
 		} else {
@@ -287,7 +335,7 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 				EraseLine(rr.stdio.Out, ERASE_LINE_END)
 				// print out the character
 				rr.printChar(char, mask)
-				cursorCurrent.X++
+				increment()
 			}
 			// if we are at the last line, we want to visually insert a new line and append to it.
 			if cursorCurrent.CursorIsAtLineEnd(terminalSize) && cursorCurrent.Y == terminalSize.Y {
@@ -296,7 +344,7 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 				// restore the position of the cursor horizontally
 				cursor.Restore()
 				// restore the position of the cursor vertically
-				cursor.Up(1)
+				cursor.PreviousLine(1)
 			} else {
 				// restore cursor
 				cursor.Restore()
@@ -306,11 +354,20 @@ func (rr *RuneReader) ReadLine(mask rune) ([]rune, error) {
 			if cursorCurrent.CursorIsAtLineEnd(terminalSize) {
 				cursor.NextLine(1)
 			} else {
-				cursor.Forward(1)
+				cursor.Forward(runeWidth(r))
 			}
 			// increment the index
 			index++
+			increment()
 
 		}
 	}
+}
+
+func runeWidth(r rune) int {
+	switch width.LookupRune(r).Kind() {
+	case width.EastAsianWide, width.EastAsianFullwidth:
+		return 2
+	}
+	return 1
 }
