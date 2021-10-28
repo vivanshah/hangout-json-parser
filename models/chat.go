@@ -15,6 +15,7 @@ type Message struct {
 	Timestamp time.Time
 	Text      string
 	Self      bool
+	ImageURLs []string
 }
 
 func (c Chat) String() string {

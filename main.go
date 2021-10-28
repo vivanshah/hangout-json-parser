@@ -79,6 +79,12 @@ func main() {
 					message.Text = message.Text + "[" + s.LinkData.LinkTarget + "]"
 				}
 			}
+			for _, a := range e.ChatMessage.MessageContent.Attachment {
+				message.ImageURLs = append(message.ImageURLs, a.EmbedItem.PlusPhoto.URL)
+				if a.EmbedItem.PlusPhoto.URL == "https://lh3.googleusercontent.com/-kPexdUdQSuA/XQWkfNDso0I/AAAAAAAArYw/wmda3tF6vAIGfTWE9yJCzEi7KCsxyA2zgCK8BGAs/s0/2019-06-15.jpg" {
+					fmt.Println("YEAH WE FOUND IT!!!")
+				}
+			}
 			chat.Messages = append(chat.Messages, message)
 		}
 		if len(chat.Messages) < 1 {

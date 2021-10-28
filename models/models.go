@@ -95,8 +95,30 @@ type LinkData struct {
 	LinkTarget string `json:"link_target"`
 }
 type MessageContent struct {
-	Segment []Segment `json:"segment"`
+	Segment    []Segment    `json:"segment"`
+	Attachment []Attachment `json:"attachment"`
 }
+
+type Attachment struct {
+	EmbedItem EmbedItem `json:"embed_item"`
+}
+type EmbedItem struct {
+	Type      []string  `json:"type"`
+	Id        string    `json:"id"`
+	PlusPhoto PlusPhoto `json:"plus_photo"`
+}
+
+type PlusPhoto struct {
+	Thumbnail Thumbnail `json:"thumbnail"`
+	URL       string    `json:"url"`
+	//there's more here
+}
+
+type Thumbnail struct {
+	URL      string `json:"url"`
+	ImageURL string `json:"image_url"`
+}
+
 type ChatMessage struct {
 	MessageContent MessageContent `json:"message_content"`
 }

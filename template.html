@@ -32,10 +32,9 @@ body {
 
 .container img {
   float: left;
-  max-width: 60px;
+  max-width: 250px;
   width: 100%;
-  margin-right: 20px;
-  border-radius: 50%;
+  margin: 10px;
 }
 
 .container img.right {
@@ -68,14 +67,20 @@ body {
     {{if .Self}}
     <div class="container self">
         <div class="sender">{{.Sender}}</div>
+        {{range .ImageURLs}}
+          <img src="{{.}}"></img>
+        {{end}}
         <p>{{.Text }}</p>
-        <span class="time-right">{{ .Timestamp.Format "Jan 02, 2006 3:4:5 PM"}}</span>
+        <span class="time-right">{{ .Timestamp.Format "Jan 02, 2006 3:04:05 PM"}}</span>
     </div>
     {{else}}
     <div class="container">
         <div class="sender">{{.Sender}}</div>
+        {{range .ImageURLs}}
+          <img src="{{.}}"></img>
+        {{end}}
         <p>{{.Text }}</p>
-        <span class="time-left">{{ .Timestamp.Format "Jan 02, 2006 3:4:5 PM"}}</span>
+        <span class="time-left">{{ .Timestamp.Format "Jan 02, 2006 3:04:05 PM"}}</span>
       </div>
     {{end}}
     <br style="clear: both;" /> 
