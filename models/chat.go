@@ -14,6 +14,7 @@ type Message struct {
 	SenderID  int
 	Timestamp time.Time
 	Text      string
+	Self      bool
 }
 
 func (c Chat) String() string {

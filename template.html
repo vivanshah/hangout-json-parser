@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+  margin: 0 auto;
+  max-width: 800px;
+  padding: 0 20px;
+}
+
+.container {
+  border: 2px solid #dedede;
+  background-color: #f1f1f1;
+  float: left;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px 0;
+}
+
+.self {
+  border-color: #ccc;
+  float: right;
+  background-color: #ddd;
+}
+
+.container::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+.container img {
+  float: left;
+  max-width: 60px;
+  width: 100%;
+  margin-right: 20px;
+  border-radius: 50%;
+}
+
+.container img.right {
+  float: right;
+  margin-left: 20px;
+  margin-right:0;
+}
+
+.sender {
+    font-weight: bold;
+}
+
+.time-right {
+  float: right;
+  color: #aaa;
+}
+
+.time-left {
+  float: left;
+  color: #999;
+}
+</style>
+</head>
+<body>
+
+<h2>{{.Title}}</h2>
+
+{{range .Messages}}
+    <div style="width:100%">
+    {{if .Self}}
+    <div class="container self">
+        <div class="sender">{{.Sender}}</div>
+        <p>{{.Text }}</p>
+        <span class="time-right">{{ .Timestamp.Format "Jan 02, 2006 3:4:5 PM"}}</span>
+    </div>
+    {{else}}
+    <div class="container">
+        <div class="sender">{{.Sender}}</div>
+        <p>{{.Text }}</p>
+        <span class="time-left">{{ .Timestamp.Format "Jan 02, 2006 3:4:5 PM"}}</span>
+      </div>
+    {{end}}
+    <br style="clear: both;" /> 
+    </div>
+{{end}}
+</body>
+</html>
