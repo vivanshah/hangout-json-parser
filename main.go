@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/kennygrant/sanitize"
-	chat "github.com/vivanshah/hangout-json-parser/chatWriter"
+	chat "github.com/vivanshah/hangout-json-parser/chatwriter"
 	"github.com/vivanshah/hangout-json-parser/models"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -72,6 +72,7 @@ func main() {
 			message.Timestamp = time.Unix(0, t)
 			message.SenderID = chat.ParticipantIDs[e.SenderID.ChatID]
 			message.Sender = chat.ParticipantNames[e.SenderID.ChatID]
+			message.Self = e.SenderID.ChatID == e.SelfEventState.UserID.ChatID
 			for _, s := range e.ChatMessage.MessageContent.Segment {
 				message.Text = message.Text + " " + s.Text
 				if s.Type == "LINK" {
@@ -104,7 +105,7 @@ func main() {
 
 		filename := sanitize.Name(selectedChatTitle)
 
-		c, err := chat.NewTxtWriter(filename)
+		c, err := chat.NewHTMLWriter("template.html", filename)
 		if err != nil {
 			fmt.Println(err.Error())
 			break
