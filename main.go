@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -12,7 +10,7 @@ import (
 
 	"github.com/kennygrant/sanitize"
 	"github.com/vivanshah/hangout-json-parser/chat"
-	"github.com/vivanshah/hangout-json-parser/models"
+	"github.com/vivanshah/hangout-json-parser/hangouts"
 
 	"github.com/AlecAivazis/survey/v2"
 )
@@ -25,30 +23,17 @@ func main() {
 	)
 	flag.Parse()
 
-	jsonFile, err := os.Open(*input)
+	hangout, err := hangouts.ReadHangoutsFile(input)
 	if err != nil {
-		fmt.Println(err)
-	}
-	defer jsonFile.Close()
-
-	var hangouts models.Hangouts
-	fmt.Println("Parsing hangouts file")
-	byteValue, err := ioutil.ReadAll(jsonFile)
-	if err != nil {
-		fmt.Println(err)
+		fmt.Print(err.Error())
+		os.Exit(1)
 	}
 
-	err = json.Unmarshal(byteValue, &hangouts)
-	if err != nil {
-		fmt.Println("Error parsing input file: ", err.Error())
-		os.Exit((1))
-	}
-
-	fmt.Println("Loaded ", len(hangouts.Conversations), " conversations")
+	fmt.Println("Loaded ", len(hangout.Conversations), " conversations")
 	chatMap := map[string]chat.Conversation{}
 	chatTitles := []string{}
 	chats := []chat.Conversation{}
-	for _, c := range hangouts.Conversations {
+	for _, c := range hangout.Conversations {
 		convo := chat.Conversation{
 			ParticipantIDs:   map[string]int{},
 			ParticipantNames: map[string]string{},
