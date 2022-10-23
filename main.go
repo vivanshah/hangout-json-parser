@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/kennygrant/sanitize"
-	chat "github.com/vivanshah/hangout-json-parser/chatwriter"
+	"github.com/vivanshah/hangout-json-parser/chat"
 	"github.com/vivanshah/hangout-json-parser/models"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -45,33 +45,33 @@ func main() {
 	}
 
 	fmt.Println("Loaded ", len(hangouts.Conversations), " conversations")
-	chatMap := map[string]models.Chat{}
+	chatMap := map[string]chat.Conversation{}
 	chatTitles := []string{}
-	chats := []models.Chat{}
+	chats := []chat.Conversation{}
 	for _, c := range hangouts.Conversations {
-		chat := models.Chat{
+		convo := chat.Conversation{
 			ParticipantIDs:   map[string]int{},
 			ParticipantNames: map[string]string{},
-			Messages:         []models.Message{},
+			Messages:         []chat.Message{},
 		}
 
 		participants := c.Conversation.Conversation.ParticipantData
 		for n, p := range participants {
-			chat.ParticipantIDs[p.ID.ChatID] = n
-			chat.ParticipantNames[p.ID.ChatID] = p.FallbackName
-			chat.Title = chat.Title + p.FallbackName + ", "
+			convo.ParticipantIDs[p.ID.ChatID] = n
+			convo.ParticipantNames[p.ID.ChatID] = p.FallbackName
+			convo.Title = convo.Title + p.FallbackName + ", "
 		}
-		chat.Title = strings.TrimRight(chat.Title, ", ")
+		convo.Title = strings.TrimRight(convo.Title, ", ")
 		for _, e := range c.Events {
 			if e.EventType != "REGULAR_CHAT_MESSAGE" {
 				continue
 			}
-			message := models.Message{}
+			message := chat.Message{}
 			t, _ := strconv.ParseInt(e.Timestamp, 10, 64)
 			t = t * 1000
 			message.Timestamp = time.Unix(0, t)
-			message.SenderID = chat.ParticipantIDs[e.SenderID.ChatID]
-			message.Sender = chat.ParticipantNames[e.SenderID.ChatID]
+			message.SenderID = convo.ParticipantIDs[e.SenderID.ChatID]
+			message.Sender = convo.ParticipantNames[e.SenderID.ChatID]
 			message.Self = e.SenderID.ChatID == e.SelfEventState.UserID.ChatID
 			for _, s := range e.ChatMessage.MessageContent.Segment {
 				message.Text = message.Text + " " + s.Text
@@ -85,14 +85,14 @@ func main() {
 					fmt.Println("YEAH WE FOUND IT!!!")
 				}
 			}
-			chat.Messages = append(chat.Messages, message)
+			convo.Messages = append(convo.Messages, message)
 		}
-		if len(chat.Messages) < 1 {
+		if len(convo.Messages) < 1 {
 			continue
 		}
-		chats = append(chats, chat)
-		chatTitles = append(chatTitles, chat.Title)
-		chatMap[chat.Title] = chat
+		chats = append(chats, convo)
+		chatTitles = append(chatTitles, convo.Title)
+		chatMap[convo.Title] = convo
 	}
 
 	prompt := &survey.Select{

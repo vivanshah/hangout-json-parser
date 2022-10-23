@@ -3,8 +3,6 @@ package chat
 import (
 	"html/template"
 	"os"
-
-	"github.com/vivanshah/hangout-json-parser/models"
 )
 
 type HTMLWriter struct {
@@ -22,7 +20,7 @@ func NewHTMLWriter(templatePath string, path string) (Writer, error) {
 	return &h, nil
 }
 
-func (t *HTMLWriter) WriteChat(chat models.Chat) error {
+func (t *HTMLWriter) WriteChat(convo Conversation) error {
 
 	f, err := os.Create(t.Path)
 	defer f.Close()
@@ -30,7 +28,7 @@ func (t *HTMLWriter) WriteChat(chat models.Chat) error {
 		return err
 	}
 
-	err = t.tmpl.Execute(f, chat)
+	err = t.tmpl.Execute(f, convo)
 	if err != nil {
 		return err
 	}

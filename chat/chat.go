@@ -1,8 +1,8 @@
-package models
+package chat
 
 import "time"
 
-type Chat struct {
+type Conversation struct {
 	Title            string
 	ParticipantIDs   map[string]int
 	ParticipantNames map[string]string
@@ -18,6 +18,6 @@ type Message struct {
 	ImageURLs []string
 }
 
-func (c Chat) String() string {
+func (c Conversation) String() string {
 	return c.Title
 }
