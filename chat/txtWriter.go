@@ -3,8 +3,6 @@ package chat
 import (
 	"fmt"
 	"os"
-
-	"github.com/vivanshah/hangout-json-parser/models"
 )
 
 type txtWriter struct {
@@ -19,7 +17,7 @@ func NewTxtWriter(filename string) (Writer, error) {
 	return &t, nil
 }
 
-func (t *txtWriter) WriteChat(chat models.Chat) error {
+func (t *txtWriter) WriteChat(convo Conversation) error {
 
 	f, err := os.Create(t.Path)
 	defer f.Close()
@@ -28,7 +26,7 @@ func (t *txtWriter) WriteChat(chat models.Chat) error {
 	}
 
 	var line string
-	for _, m := range chat.Messages {
+	for _, m := range convo.Messages {
 		line = m.Sender + " @ " + m.Timestamp.Format("3:04:05 PM Jan _2 2006") + ": " + m.Text + "\r"
 		fmt.Fprintln(f, line)
 	}
