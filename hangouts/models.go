@@ -1,4 +1,4 @@
-package models
+package hangouts
 
 type Hangouts struct {
 	Conversations []Conversations `json:"conversations"`
