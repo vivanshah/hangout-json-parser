@@ -18,7 +18,8 @@ import (
 func main() {
 
 	var (
-		input = flag.String("input", "hangouts.json", "Input json file")
+		input    = flag.String("input", "hangouts.json", "Input json file")
+		template = flag.String("template", "imessage.html", "HTML Template")
 		//outputFormat = flag.String("f","txt", "Output file format")
 	)
 	flag.Parse()
@@ -96,7 +97,7 @@ func main() {
 
 		filename := sanitize.Name(selectedChatTitle)
 
-		c, err := chat.NewHTMLWriter("template.html", filename)
+		c, err := chat.NewHTMLWriter(*template, filename)
 		if err != nil {
 			fmt.Println(err.Error())
 			break
